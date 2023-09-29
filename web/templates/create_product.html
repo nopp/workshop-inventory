@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Product</title>
+</head>
+<body>
+    <h1>Create Product</h1>
+    <form method="POST" action="{{ url_for('create_product') }}">
+        <label for="name">Name:</label>
+        <input type="text" name="name" id="name" required><br>
+        <label for="cabinet">Cabinet:</label>
+        <input type="number" name="cabinet" id="cabinet" required><br>
+        <label for="shelf">Shelf:</label>
+        <input type="number" name="shelf" id="shelf" required><br>
+        <button type="submit">Create</button>
+    </form>
+    <a href="/">Back to Product List</a>
+</body>
+</html>

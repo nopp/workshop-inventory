@@ -12,12 +12,17 @@
             </div>
             <div class="form-group">
                 <label for="cabinet">Cabinet:</label>
-                <input type="number" name="cabinet" id="cabinet" class="form-control" value="{{ product.cabinet }}" required>
+                <input type="text" name="cabinet" id="cabinet" class="form-control" value="{{ product.cabinet }}" required>
             </div>
             <div class="form-group">
                 <label for="shelf">Shelf:</label>
-                <input type="number" name="shelf" id="shelf" class="form-control" value="{{ product.shelf }}" required>
+                <input type="text" name="shelf" id="shelf" class="form-control" value="{{ product.shelf }}" required>
             </div>
+            <div class="form-group">
+                <label for="shelf">Position:</label>
+                <input type="text" name="shelf" id="shelf" class="form-control" value="{{ product.shelfposition }}" required>
+            </div>
+            <br>            
             <button type="submit" class="btn btn-success">Save Changes</button>
             <a class="btn btn-primary ml-2" href="/">Back to Product List</a>
         </form>

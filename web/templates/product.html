@@ -3,10 +3,16 @@
 {% block title %}Product Details{% endblock %}
 
 {% block content %}
-    <h1>Product Details</h1>
-    <p>ID: {{ product.id }}</p>
-    <p>Name: {{ product.name }}</p>
-    <p>Cabinet: {{ product.cabinet }}</p>
-    <p>Shelf: {{ product.shelf }}</p>
-    <a href="/">Back to Product List</a>
+    <div class="container">
+        <h1 class="mt-5">Product Details</h1>
+        <div class="card mt-3">
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ product.id }}</p>
+                <p><strong>Name:</strong> {{ product.name }}</p>
+                <p><strong>Cabinet:</strong> {{ product.cabinet }}</p>
+                <p><strong>Shelf:</strong> {{ product.shelf }}</p>
+                <a class="btn btn-primary" href="/">Back to Product List</a>
+            </div>
+        </div>
+    </div>
 {% endblock %}

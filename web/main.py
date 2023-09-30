@@ -3,17 +3,18 @@ import requests
 
 app = Flask(__name__)
 
-@api_url = "http://localhost:8080"
+api_url = "http://localhost:8080"
 
 @app.route('/')
 def index():
-    response = requests.get(f"{api_url}/products")
+    response = requests.get(api_url+"/products")
+    print(response.status_code)
     products = response.json()
     return render_template('index.html', products=products)
 
 @app.route('/product/<int:id>')
 def view_product(id):
-    response = requests.get(f"{api_url}/product/{id}")
+    response = requests.get(api_url+"/product/{id}")
     product = response.json()
     return render_template('product.html', product=product)
 
@@ -25,7 +26,7 @@ def create_product():
             'cabinet': request.form['cabinet'],
             'shelf': request.form['shelf']
         }
-        response = requests.post(f"{api_url}/product", json=data)
+        response = requests.post(api_url+"/product", json=data)
         if response.status_code == 201:
             return redirect('/')
     
@@ -33,7 +34,7 @@ def create_product():
 
 @app.route('/product/edit/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
-    response = requests.get(f"{api_url}/product/{id}")
+    response = requests.get(api_url+"/product/{id}")
     product = response.json()
 
     if request.method == 'POST':
@@ -42,7 +43,7 @@ def edit_product(id):
             'cabinet': request.form['cabinet'],
             'shelf': request.form['shelf']
         }
-        response = requests.put(f"{api_url}/product/{id}", json=data)
+        response = requests.put(api_url+"/product/{id}", json=data)
         if response.status_code == 200:
             return redirect('/')
 
@@ -50,9 +51,9 @@ def edit_product(id):
 
 @app.route('/product/delete/<int:id>', methods=['POST'])
 def delete_product(id):
-    response = requests.delete(f"{api_url}/product/{id}")
+    response = requests.delete(api_url+"/product/{id}")
     if response.status_code == 204:
         return redirect('/')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(port=5050,debug=True)

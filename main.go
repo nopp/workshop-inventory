@@ -14,7 +14,7 @@ import (
 type Product struct {
 	ID            int    `json:"id"`
 	Name          string `json:"name"`
-	Cabinet       int    `json:"cabinet"`
+	Cabinet       string `json:"cabinet"`
 	Shelf         string `json:"shelf"`
 	ShelfPosition int    `json:"shelfposition"`
 }
@@ -41,7 +41,7 @@ func main() {
 func getProducts(c *gin.Context) {
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query("SELECT p.id, p.name, p.cabinet_id, s.name, s.position FROM products as p, shelves as s WHERE p.shelf_id = s.id")
+	rows, err := db.Query("SELECT p.id, p.name, c.name, s.name, s.position FROM products as p, shelves as s, cabinets as c WHERE p.shelf_id = s.id and p.cabinet_id = c.id")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -73,7 +73,7 @@ func getProduct(c *gin.Context) {
 	defer db.Close()
 
 	var product Product
-	err = db.QueryRow("SELECT p.id, p.name, p.cabinet_id, s.name, s.position FROM products as p, shelves as s WHERE p.id=? AND p.shelf_id = s.id", id).Scan(&product.ID, &product.Name, &product.Cabinet, &product.Shelf, &product.ShelfPosition)
+	err = db.QueryRow("SELECT p.id, p.name, c.name, s.name, s.position FROM products as p, shelves as s, cabinets as c WHERE p.id=? AND p.shelf_id = s.id AND p.cabinet_id = c.id", id).Scan(&product.ID, &product.Name, &product.Cabinet, &product.Shelf, &product.ShelfPosition)
 	if err != nil {
 		fmt.Print(err.Error())
 		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})

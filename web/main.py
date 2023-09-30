@@ -14,7 +14,7 @@ def index():
 
 @app.route('/product/<int:id>')
 def view_product(id):
-    response = requests.get(api_url+"/product/{id}")
+    response = requests.get(api_url+"/product/"+str(id))
     product = response.json()
     return render_template('product.html', product=product)
 
@@ -34,7 +34,7 @@ def create_product():
 
 @app.route('/product/edit/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
-    response = requests.get(api_url+"/product/{id}")
+    response = requests.get(api_url+"/product/"+str(id))
     product = response.json()
 
     if request.method == 'POST':
@@ -43,7 +43,7 @@ def edit_product(id):
             'cabinet': request.form['cabinet'],
             'shelf': request.form['shelf']
         }
-        response = requests.put(api_url+"/product/{id}", json=data)
+        response = requests.put(api_url+"/product/"+str(id), json=data)
         if response.status_code == 200:
             return redirect('/')
 
@@ -51,7 +51,7 @@ def edit_product(id):
 
 @app.route('/product/delete/<int:id>', methods=['POST'])
 def delete_product(id):
-    response = requests.delete(api_url+"/product/{id}")
+    response = requests.delete(api_url+"/product/"+str(id))
     if response.status_code == 204:
         return redirect('/')
 

@@ -1,8 +1,8 @@
 -- Create a database if it doesn't exist
-CREATE DATABASE IF NOT EXISTS yourdb;
+CREATE DATABASE IF NOT EXISTS homeapp;
 
 -- Use the created database
-USE yourdb;
+USE homeapp;
 
 -- Create a table to store cabinets
 CREATE TABLE IF NOT EXISTS cabinets (
@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS shelves (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     cabinet_id INT NOT NULL,
+    position INT NOT NULL,
     FOREIGN KEY (cabinet_id) REFERENCES cabinets(id)
 );
 

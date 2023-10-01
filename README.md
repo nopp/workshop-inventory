@@ -1,4 +1,4 @@
-# homeApp
+# home workshop
 
 **1. Get a List of Products:**
 

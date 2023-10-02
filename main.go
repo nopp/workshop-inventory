@@ -19,6 +19,11 @@ type Product struct {
 	ShelfPosition int    `json:"shelfposition"`
 }
 
+type Cabinet struct {
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+}
+
 func Connect() *sql.DB {
 	db, err := sql.Open("mysql", "root:123456@tcp(kvm.carlosmalucelli.com:3306)/homeapp")
 	if err != nil {
@@ -29,6 +34,7 @@ func Connect() *sql.DB {
 
 func main() {
 	router := gin.Default()
+	router.GET("/cabinets", getCabinets)
 	router.GET("/products", getProducts)
 	router.GET("/product/:id", getProduct)
 	router.POST("/product", createProduct)
@@ -60,6 +66,31 @@ func getProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, products)
+}
+
+
+func getCabinet(c *gin.Context) {
+	db := Connect()
+	defer db.Close()
+	rows, err := db.Query("SELECT * FROM cabinet")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer rows.Close()
+
+	var cabinets []Cabinet
+	for rows.Next() {
+		var cabinet Cabinet
+		err := rows.Scan(&cabinet.ID, &cabinet.Namen)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		cabinets = append(cabinets, cabinet)
+	}
+
+	c.JSON(http.StatusOK, cabinets)
 }
 
 func getProduct(c *gin.Context) {

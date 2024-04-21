@@ -8,18 +8,43 @@
         <form method="POST" action="{{ url_for('create_product') }}" class="mt-3">
             <div class="form-group">
                 <label for="name">Name:</label>
-                <input type="text" name="name" id="name" class="form-control" required>
+                <input type="text" name="name" id="name" class="form-control" required><br>
             </div>
             <div class="form-group">
                 <label for="cabinet">Cabinet:</label>
-                <input type="number" name="cabinet" id="cabinet" class="form-control" required>
+                <select id="cabinet" name="cabinet">
+                {% for cabinet in cabinets %}
+                    <option value="{{ cabinet[0] }}">{{ cabinet[1] }}</option>
+                {% endfor %}
+                </select>
+                <br><br>
             </div>
             <div class="form-group">
                 <label for="shelf">Shelf:</label>
-                <input type="number" name="shelf" id="shelf" class="form-control" required>
+                <select id="shelf" name="shelf"></select>
+                <br><br>
             </div>
             <button type="submit" class="btn btn-success">Create</button>
             <a class="btn btn-primary ml-2" href="/">Back to Product List</a>
         </form>
+        <script>
+            function fetchShelves() {
+                var cabinetId = document.getElementById("cabinet").value;
+                fetch('/shelves/' + cabinetId)
+                .then(response => response.json())
+                .then(data => {
+                    var shelfSelect = document.getElementById("shelf");
+                    shelfSelect.innerHTML = '';
+                    data.forEach(shelf => {
+                        var option = document.createElement("option");
+                        option.text = shelf;
+                        option.value = shelf;
+                        shelfSelect.add(option);
+                    });
+                });
+            }
+            document.getElementById("cabinet").addEventListener("change", fetchShelves);
+            fetchShelves();
+        </script>
     </div>
 {% endblock %}

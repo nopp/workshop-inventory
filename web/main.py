@@ -1,9 +1,12 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 import requests
+import pymysql
 
 app = Flask(__name__)
 
-api_url = "http://localhost:8080"
+api_url = "http://homer.local/api/"
+
+db = pymysql.connect(host="homer.local", user="root", passwd="loke99",db="homeapp")
 
 @app.route('/')
 def index():
@@ -30,7 +33,17 @@ def create_product():
         if response.status_code == 201:
             return redirect('/')
     
-    return render_template('create_product.html')
+    cursor = db.cursor()
+    cursor.execute("SELECT id, name FROM cabinets")
+    cabinets = cursor.fetchall()
+    return render_template('create_product.html', cabinets=cabinets)
+
+@app.route('/shelves/<int:cabinet_id>')
+def get_shelves(cabinet_id):
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM shelves WHERE cabinet_id = %s", (cabinet_id,))
+    shelves = [row[0] for row in cursor.fetchall()]
+    return jsonify(shelves)
 
 @app.route('/product/edit/<int:id>', methods=['GET', 'POST'])
 def edit_product(id):
@@ -56,4 +69,4 @@ def delete_product(id):
         return redirect('/')
 
 if __name__ == '__main__':
-    app.run(port=5050,debug=True)
+    app.run(host="0.0.0.0",port=5050,debug=True)

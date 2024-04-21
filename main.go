@@ -69,10 +69,10 @@ func getProducts(c *gin.Context) {
 }
 
 
-func getCabinet(c *gin.Context) {
+func getCabinets(c *gin.Context) {
 	db := Connect()
 	defer db.Close()
-	rows, err := db.Query("SELECT * FROM cabinet")
+	rows, err := db.Query("SELECT * FROM cabinets")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -82,7 +82,7 @@ func getCabinet(c *gin.Context) {
 	var cabinets []Cabinet
 	for rows.Next() {
 		var cabinet Cabinet
-		err := rows.Scan(&cabinet.ID, &cabinet.Namen)
+		err := rows.Scan(&cabinet.ID, &cabinet.Name)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return

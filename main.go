@@ -21,8 +21,8 @@ type Product struct {
 
 type ProductNew struct {
 	Name    string `json:"name"`
-	Cabinet string `json:"cabinet"`
-	Shelf   string `json:"shelf"`
+	Cabinet int    `json:"cabinet"`
+	Shelf   int    `json:"shelf"`
 }
 
 type Cabinet struct {
@@ -121,12 +121,9 @@ func getProduct(c *gin.Context) {
 
 func createProduct(c *gin.Context) {
 	var productX ProductNew
-
-	if err := c.BindJSON(&productX); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
-		return
-	}
+	productX.Name = c.PostForm("name")
+	productX.Cabinet, _ = strconv.Atoi(c.PostForm("cabinet"))
+	productX.Shelf, _ = strconv.Atoi(c.PostForm("shelf"))
 
 	db := Connect()
 	defer db.Close()

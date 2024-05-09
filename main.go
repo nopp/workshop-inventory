@@ -120,21 +120,20 @@ func getProduct(c *gin.Context) {
 }
 
 func createProduct(c *gin.Context) {
-	var productX ProductNew
-	productX.Name = c.PostForm("name")
-	productX.Cabinet, _ = strconv.Atoi(c.PostForm("cabinet"))
-	productX.Shelf, _ = strconv.Atoi(c.PostForm("shelf"))
+	var product ProductNew
+	product.Name = c.PostForm("name")
+	product.Cabinet, _ = strconv.Atoi(c.PostForm("cabinet"))
+	product.Shelf, _ = strconv.Atoi(c.PostForm("shelf"))
 
 	db := Connect()
 	defer db.Close()
 
-	_, err := db.Exec("INSERT INTO products (name, cabinet_id, shelf_id) VALUES (?, ?, ?)", productX.Name, productX.Cabinet, productX.Shelf)
+	_, err := db.Exec("INSERT INTO products (name, cabinet_id, shelf_id) VALUES (?, ?, ?)", product.Name, product.Cabinet, product.Shelf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusCreated, productX)
+	c.Redirect(302, "/ws")
 }
 
 func updateProduct(c *gin.Context) {

@@ -21,19 +21,8 @@ def view_product(id):
     product = response.json()
     return render_template('product.html', product=product)
 
-@app.route('/product/new', methods=['GET', 'POST'])
+@app.route('/product/new', methods=['GET'])
 def create_product():
-    if request.method == 'POST':
-        data = {
-            'name': request.form['name'],
-            'cabinet': request.form['cabinet'],
-            'shelf': request.form['shelf']
-        }
-        print(data)
-        response = requests.post(api_url+"/api/product", json=data)
-        if response.status_code == 201:
-            return redirect('/ws')
-    
     cursor = db.cursor()
     cursor.execute("SELECT id, name FROM cabinets")
     cabinets = cursor.fetchall()
@@ -50,17 +39,6 @@ def get_shelves(cabinet_id):
 def edit_product(id):
     response = requests.get(api_url+"/api/product/"+str(id))
     product = response.json()
-
-    if request.method == 'POST':
-        data = {
-            'name': request.form['name'],
-            'cabinet': request.form['cabinet'],
-            'shelf': request.form['shelf']
-        }
-        response = requests.put(api_url+"/product/"+str(id), json=data)
-        if response.status_code == 200:
-            return redirect('/')
-
     return render_template('edit_product.html', product=product)
 
 @app.route('/product/delete/<int:id>', methods=['POST'])

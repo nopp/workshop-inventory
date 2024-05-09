@@ -19,13 +19,19 @@ type Product struct {
 	ShelfPosition int    `json:"shelfposition"`
 }
 
+type ProductNew struct {
+	Name    string `json:"name"`
+	Cabinet string `json:"cabinet"`
+	Shelf   string `json:"shelf"`
+}
+
 type Cabinet struct {
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 func Connect() *sql.DB {
-	db, err := sql.Open("mysql", "root:123456@tcp(kvm.carlosmalucelli.com:3306)/homeapp")
+	db, err := sql.Open("mysql", "root:123654@tcp(localhost:3306)/homeapp")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,7 +47,7 @@ func main() {
 	router.PUT("/product/:id", updateProduct)
 	router.DELETE("/product/:id", deleteProduct)
 
-	router.Run(":8080")
+	router.Run(":7575")
 }
 
 func getProducts(c *gin.Context) {
@@ -67,7 +73,6 @@ func getProducts(c *gin.Context) {
 
 	c.JSON(http.StatusOK, products)
 }
-
 
 func getCabinets(c *gin.Context) {
 	db := Connect()
@@ -115,24 +120,24 @@ func getProduct(c *gin.Context) {
 }
 
 func createProduct(c *gin.Context) {
-	var product Product
-	if err := c.ShouldBindJSON(&product); err != nil {
+	var productX ProductNew
+
+	if err := c.BindJSON(&productX); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
 		return
 	}
 
 	db := Connect()
 	defer db.Close()
 
-	result, err := db.Exec("INSERT INTO products (name, cabinet, shelf) VALUES (?, ?, ?)", product.Name, product.Cabinet, product.Shelf)
+	_, err := db.Exec("INSERT INTO products (name, cabinet_id, shelf_id) VALUES (?, ?, ?)", productX.Name, productX.Cabinet, productX.Shelf)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	productID, _ := result.LastInsertId()
-	product.ID = int(productID)
-	c.JSON(http.StatusCreated, product)
+	c.JSON(http.StatusCreated, productX)
 }
 
 func updateProduct(c *gin.Context) {

@@ -11,7 +11,6 @@ db = pymysql.connect(host="homer.local", user="root", passwd="123654",db="homeap
 @app.route('/')
 def index():
     response = requests.get(api_url+"/api/products")
-    print(response.status_code)
     products = response.json()
     return render_template('index.html', products=products)
 

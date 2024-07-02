@@ -118,7 +118,7 @@ INSERT INTO `products` (`id`, `name`, `cabinet_id`, `shelf_id`) VALUES
 (86,	'Buchas nylon',	1,	53),
 (87,	'Cadeados',	1,	54),
 (88,	'Stepper wire',	1,	55),
-(89,	'PG7 PG9',	1,	56),
+(89,	'Plug PG7 PG9',	1,	56),
 (90,	'Baterias',	1,	57),
 (91,	'BMG Extruder',	1,	58),
 (92,	'Cantoneira 90',	1,	59),

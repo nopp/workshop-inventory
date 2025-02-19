@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Adicionar Peça{% endblock %}
+{% block content %}
+    <h2 class="center-align">Adicionar nova peça</h2>
+    <form method="POST" enctype="multipart/form-data" class="row">
+        <!-- Campo Nome da Peça -->
+        <div class="input-field col s6">
+            <input type="text" id="nome" name="nome" class="validate" required>
+            <label for="nome">Nome da peça</label>
+        </div>
+
+        <!-- Campo Descrição -->
+        <div class="input-field col s6">
+            <textarea id="descricao" name="descricao" class="materialize-textarea validate"></textarea>
+            <label for="descricao">Descrição</label>
+        </div>
+
+        <!-- Campo Estante -->
+        <div class="input-field col s4">
+            <input type="text" id="estante" name="estante" class="validate" required>
+            <label for="estante">Estante</label>
+        </div>
+
+        <!-- Campo Prateleira -->
+        <div class="input-field col s4">
+            <input type="text" id="prateleira" name="prateleira" class="validate" required>
+            <label for="prateleira">Prateleira</label>
+        </div>
+
+        <!-- Campo Segmento -->
+        <div class="input-field col s4">
+            <input type="text" id="segmento" name="segmento" class="validate" required>
+            <label for="segmento">Segmento</label>
+        </div>
+
+        <!-- Campo de Upload de Imagem -->
+        <div class="file-field input-field col s12">
+            <div class="btn">
+                <span>Imagem</span>
+                <input type="file" id="imagem" name="imagem" accept="image/*">
+            </div>
+            <div class="file-path-wrapper">
+                <input class="file-path validate" type="text">
+            </div>
+        </div>
+
+        <!-- Botões de ação -->
+        <div class="col s12">
+            <button type="submit" class="btn green">Adicionar</button>
+            <a href="{{ url_for('index') }}" class="btn grey">Voltar</a>
+        </div>
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializa os textareas
+            var textareas = document.querySelectorAll('textarea');
+            M.Textarea.init(textareas);
+
+            // Inicializa os campos de texto
+            M.updateTextFields();
+        });
+    </script>
+{% endblock %}

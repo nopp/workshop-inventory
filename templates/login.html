@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block content %}
+    <div class="row">
+        <div class="col s12 m6 offset-m3">
+            <h3 class="center-align">Login</h3>
+            <form method="POST" class="card-panel">
+                <!-- Campo Usuário -->
+                <div class="input-field">
+                    <input type="text" id="username" name="username" class="validate" required>
+                    <label for="username">Usuário</label>
+                </div>
+
+                <!-- Campo Senha -->
+                <div class="input-field">
+                    <input type="password" id="password" name="password" class="validate" required>
+                    <label for="password">Senha</label>
+                </div>
+
+                <!-- Botão de Entrar -->
+                <button type="submit" class="btn blue">Entrar</button>
+            </form>
+
+            <!-- Link para Registro -->
+            <p class="center-align">Não tem uma conta? <a href="{{ url_for('register') }}">Registre-se</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Atualiza os campos de texto para garantir que os labels funcionem
+            M.updateTextFields();
+        });
+    </script>
+{% endblock %}

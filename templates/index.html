@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Peças{% endblock %}
+{% block content %}
+    <h2 class="center-align">Lista de Peças</h2>
+
+    <form method="POST" class="row">
+        <div class="input-field col s8">
+            <input type="text" name="query" value="{{ query }}" placeholder="Buscar peça...">
+        </div>
+        <div class="input-field col s4">
+            <button type="submit" class="btn blue">Buscar</button>
+        </div>
+    </form>
+
+    <table class="striped">
+        <thead>
+            <tr>
+                <th>Nome</th><th>Descrição</th><th>Estante</th><th>Prateleira</th><th>Segmento</th><th>Imagem</th><th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for peca in pecas %}
+            <tr>
+                <td>{{ peca.nome }}</td>
+                <td>{{ peca.descricao }}</td>
+                <td>{{ peca.estante }}</td>
+                <td>{{ peca.prateleira }}</td>
+                <td>{{ peca.segmento }}</td>
+                <td>
+                    {% if peca.imagem %}
+                        <img src="{{ url_for('static', filename='uploads/' + peca.imagem) }}" width="50">
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{{ url_for('edit', id=peca.id) }}" class="btn yellow">Editar</a>
+                    <form action="{{ url_for('delete', id=peca.id) }}" method="post" style="display:inline;">
+                        <button type="submit" class="btn red">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{{ url_for('add') }}" class="btn blue">Adicionar Peça</a>
+    <a href="{{ url_for('logout') }}" class="btn grey">Logout</a>
+{% endblock %}

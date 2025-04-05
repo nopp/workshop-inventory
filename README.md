@@ -2,6 +2,8 @@
 
 A simple and efficient inventory management system for workshops, built with Go and Bootstrap.
 
+Obs:. I started to translate all code from portugues to english.
+
 ![Screenshot of the Workshop Inventory System](system.png)
 
 ## Features

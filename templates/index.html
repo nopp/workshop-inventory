@@ -1,46 +1,307 @@
-{% extends 'base.html' %}
-{% block title %}Lista de Peças{% endblock %}
-{% block content %}
-    <h2 class="center-align">Lista de Peças</h2>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventário da Oficina</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .item-photo {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .photo-preview {
+      max-width: 200px;
+      max-height: 200px;
+      display: none;
+      margin-top: 10px;
+    }
+    .thumb-container {
+      position: relative;
+      display: inline-block;
+    }
+    .hover-preview {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .hover-preview img {
+      max-width: 60vw;
+      max-height: 60vh;
+      object-fit: contain;
+    }
+    .thumb-container:hover .hover-preview {
+      display: block;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>Workshop Inventory</h1>
+      <a href="/estantes" class="btn btn-secondary">Gerenciar Estantes</a>
+    </div>
 
-    <form method="POST" class="row">
-        <div class="input-field col s8">
-            <input type="text" name="query" value="{{ query }}" placeholder="Buscar peça...">
+    <form action="/" method="get" class="card p-3 mb-4">
+      <h5>Buscar Itens</h5>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <input type="text" name="q" class="form-control" placeholder="Buscar por nome ou descrição..." value="{{.Query}}">
         </div>
-        <div class="input-field col s4">
-            <button type="submit" class="btn blue">Buscar</button>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-primary w-100">Buscar</button>
         </div>
+      </div>
     </form>
 
-    <table class="striped">
-        <thead>
-            <tr>
-                <th>Nome</th><th>Descrição</th><th>Estante</th><th>Prateleira</th><th>Segmento</th><th>Imagem</th><th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for peca in pecas %}
-            <tr>
-                <td>{{ peca.nome }}</td>
-                <td>{{ peca.descricao }}</td>
-                <td>{{ peca.estante }}</td>
-                <td>{{ peca.prateleira }}</td>
-                <td>{{ peca.segmento }}</td>
-                <td>
-                    {% if peca.imagem %}
-                        <img src="{{ url_for('static', filename='uploads/' + peca.imagem) }}" width="50">
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{{ url_for('edit', id=peca.id) }}" class="btn yellow">Editar</a>
-                    <form action="{{ url_for('delete', id=peca.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn red">Excluir</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
+    <form action="/novo" method="post" class="card p-3 mb-4" enctype="multipart/form-data">
+      <h5>Adicionar Novo Item</h5>
+      <div class="row g-3">
+        <div class="col-md-3">
+          <input name="nome" class="form-control" placeholder="Nome" required>
+        </div>
+        <div class="col-md-3">
+          <input name="descricao" class="form-control" placeholder="Descrição" required>
+        </div>
+        <div class="col-md-2">
+          <select name="estante" class="form-select" required>
+            <option value="">Estante</option>
+            {{range .Estantes}}<option>{{.Nome}}</option>{{end}}
+          </select>
+        </div>
+        <div class="col-md-2">
+          <input name="prateleira" class="form-control" placeholder="Prateleira" required>
+        </div>
+        <div class="col-md-2">
+          <input name="compartimento" class="form-control" placeholder="Compartimento" required>
+        </div>
+        <div class="col-12">
+          <div class="input-group">
+            <input type="file" name="foto" class="form-control" accept="image/*" onchange="previewImage(this)">
+          </div>
+          <img id="preview" class="photo-preview">
+        </div>
+      </div>
+      <div class="mt-3">
+        <button class="btn btn-primary">Cadastrar</button>
+      </div>
+    </form>
+
+    <table class="table table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th> </th>
+          <th>Item</th>
+          <th>Descrição</th>
+          <th>Estante</th>
+          <th>Prateleira</th>
+          <th>Compartimento</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{if .Itens}}
+          {{range .Itens}}
+          <tr>
+            <td>
+              {{if .Foto}}
+                <div class="thumb-container">
+                  <a href="/static/photos/{{.Foto}}" target="_blank">
+                    <img src="/static/photos/thumbs/{{.Foto}}" class="item-photo" alt="{{.Nome}}">
+                  </a>
+                  <div class="hover-preview">
+                    <img src="/static/photos/{{.Foto}}" alt="{{.Nome}}">
+                  </div>
+                </div>
+              {{else}}
+                <div class="item-photo bg-secondary"></div>
+              {{end}}
+            </td>
+            <td>{{.Nome}}</td>
+            <td>{{.Descricao}}</td>
+            <td>{{.Estante}}</td>
+            <td>{{.Prateleira}}</td>
+            <td>{{.Compartimento}}</td>
+            <td>
+              <button class="btn btn-sm btn-primary me-2" onclick="editItem({{.ID}}, '{{.Nome}}', '{{.Descricao}}', '{{.Estante}}', '{{.Prateleira}}', '{{.Compartimento}}', '{{.Foto}}')">Editar</button>
+              <form action="/deletar?id={{.ID}}" method="post" style="display:inline-block">
+                <button class="btn btn-sm btn-danger">Excluir</button>
+              </form>
+            </td>
+          </tr>
+          {{end}}
+        {{else}}
+          <tr>
+            <td colspan="6" class="text-center">
+              {{if .Query}}
+                Nenhum item encontrado para "{{.Query}}"
+              {{else}}
+                Nenhum item cadastrado
+              {{end}}
+            </td>
+          </tr>
+        {{end}}
+      </tbody>
     </table>
-    <a href="{{ url_for('add') }}" class="btn blue">Adicionar Peça</a>
-    <a href="{{ url_for('logout') }}" class="btn grey">Logout</a>
-{% endblock %}
+
+    <!-- Modal de Edição -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Editar Item</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editForm" action="/editar" method="post" enctype="multipart/form-data">
+              <input type="hidden" name="id" id="editId">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nome</label>
+                  <input name="nome" id="editNome" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Descrição</label>
+                  <input name="descricao" id="editDescricao" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Estante</label>
+                  <select name="estante" id="editEstante" class="form-select" required>
+                    <option value="">Selecione...</option>
+                    {{range .Estantes}}<option>{{.Nome}}</option>{{end}}
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Prateleira</label>
+                  <input name="prateleira" id="editPrateleira" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Compartimento</label>
+                  <input name="compartimento" id="editCompartimento" class="form-control" required>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Foto</label>
+                  <div class="input-group">
+                    <input type="file" name="foto" class="form-control" accept="image/*" onchange="previewEditImage(this)">
+                  </div>
+                  <div class="mt-2">
+                    <img id="currentPhoto" class="item-photo me-2" style="display: none;">
+                    <img id="editPreview" class="photo-preview">
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="document.getElementById('editForm').submit()">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    function previewImage(input) {
+      const preview = document.getElementById('preview');
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        preview.style.display = 'none';
+      }
+    }
+
+    function previewEditImage(input) {
+      const preview = document.getElementById('editPreview');
+      const currentPhoto = document.getElementById('currentPhoto');
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+          currentPhoto.style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+      } else {
+        preview.style.display = 'none';
+        if (currentPhoto.src) {
+          currentPhoto.style.display = 'block';
+        }
+      }
+    }
+
+    function editItem(id, nome, descricao, estante, prateleira, compartimento, foto) {
+      document.getElementById('editId').value = id;
+      document.getElementById('editNome').value = nome;
+      document.getElementById('editDescricao').value = descricao;
+      document.getElementById('editEstante').value = estante;
+      document.getElementById('editPrateleira').value = prateleira;
+      document.getElementById('editCompartimento').value = compartimento;
+      
+      const currentPhoto = document.getElementById('currentPhoto');
+      const editPreview = document.getElementById('editPreview');
+      
+      if (foto) {
+        currentPhoto.src = '/static/photos/thumbs/' + foto;
+        currentPhoto.style.display = 'block';
+        editPreview.style.display = 'none';
+      } else {
+        currentPhoto.style.display = 'none';
+      }
+      
+      new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+
+    // Add hover preview positioning
+    document.addEventListener('DOMContentLoaded', function() {
+      const containers = document.querySelectorAll('.thumb-container');
+      
+      containers.forEach(container => {
+        const preview = container.querySelector('.hover-preview');
+        
+        container.addEventListener('mousemove', (e) => {
+          const rect = container.getBoundingClientRect();
+          const x = e.clientX;
+          const y = e.clientY;
+          
+          // Position the preview to the right of the cursor if there's space,
+          // otherwise position it to the left
+          const spaceRight = window.innerWidth - x;
+          const previewWidth = preview.offsetWidth;
+          
+          if (spaceRight > previewWidth + 20) {
+            preview.style.left = (x + 20) + 'px';
+          } else {
+            preview.style.left = (x - previewWidth - 20) + 'px';
+          }
+          
+          // Position vertically, ensuring the preview stays within viewport
+          const previewHeight = preview.offsetHeight;
+          let topPosition = y - previewHeight / 2;
+          
+          // Adjust if preview would go outside viewport
+          if (topPosition < 10) {
+            topPosition = 10;
+          } else if (topPosition + previewHeight > window.innerHeight - 10) {
+            topPosition = window.innerHeight - previewHeight - 10;
+          }
+          
+          preview.style.top = topPosition + 'px';
+        });
+      });
+    });
+  </script>
+</body>
+</html>

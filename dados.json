@@ -1,0 +1,21 @@
+{
+  "itens": [
+    {
+      "id": 1,
+      "nome": "M4x10",
+      "descricao": "Parafuso M4x10",
+      "estante": "L1",
+      "prateleira": "5",
+      "compartimento": "3",
+      "foto": "1743817933904655000.jpeg"
+    }
+  ],
+  "estantes": [
+    {
+      "nome": "L1"
+    },
+    {
+      "nome": "L2"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Estantes</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h1 class="mb-4">Estantes</h1>
+
+    <form action="/estantes/novo" method="post" class="card p-3 mb-4">
+      <h5>Nova Estante</h5>
+      <div class="input-group">
+        <input name="nome" class="form-control" placeholder="Nome da Estante" required>
+        <button class="btn btn-primary">Adicionar</button>
+      </div>
+    </form>
+
+    <ul class="list-group">
+      {{range .Estantes}}
+      <li class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>{{.Nome}}</span>
+          <div>
+            <button class="btn btn-sm btn-primary me-2" onclick="showEditForm('{{.Nome}}')">Editar</button>
+            <form action="/estantes/deletar?nome={{.Nome}}" method="post" style="display:inline-block">
+              <button class="btn btn-sm btn-danger">Excluir</button>
+            </form>
+          </div>
+        </div>
+        <div id="edit-form-{{.Nome}}" class="mt-2" style="display:none;">
+          <form action="/estantes/editar" method="post" class="d-flex gap-2">
+            <input type="hidden" name="nome_antigo" value="{{.Nome}}">
+            <input type="text" name="nome_novo" class="form-control" value="{{.Nome}}" required>
+            <button type="submit" class="btn btn-success">Salvar</button>
+            <button type="button" class="btn btn-secondary" onclick="hideEditForm('{{.Nome}}')">Cancelar</button>
+          </form>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+
+    <a href="/" class="btn btn-secondary mt-4">Voltar para Itens</a>
+  </div>
+
+  <script>
+    function showEditForm(nome) {
+      document.getElementById(`edit-form-${nome}`).style.display = 'block';
+    }
+    function hideEditForm(nome) {
+      document.getElementById(`edit-form-${nome}`).style.display = 'none';
+    }
+  </script>
+</body>
+</html>

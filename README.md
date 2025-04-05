@@ -28,8 +28,11 @@ A simple and efficient inventory management system for workshops, built with Go 
 
 - Go 1.16 or higher
 - Go modules enabled
+- Docker (optional)
 
 ## Installation
+
+### Option 1: Local Installation
 
 1. Clone the repository:
 ```bash
@@ -48,6 +51,73 @@ go run main.go
 ```
 
 The application will be available at `http://localhost:8080`
+
+### Option 2: Docker Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/workshop-inventory.git
+cd workshop-inventory
+```
+
+2. Build the Docker image:
+```bash
+docker build -t workshop-inventory .
+```
+
+3. Run the container:
+```bash
+docker run -d \
+  -p 8080:8080 \
+  -v $(pwd)/dados.json:/app/dados.json \
+  -v $(pwd)/static/photos:/app/static/photos \
+  workshop-inventory
+```
+
+The application will be available at `http://localhost:8080`
+
+#### Docker Volume Mounts
+- `dados.json`: Persists the inventory data
+- `static/photos`: Persists uploaded photos and thumbnails
+
+### Option 3: Kubernetes Installation
+
+1. Build and push the Docker image to your registry:
+```bash
+docker build -t your-registry/workshop-inventory:latest .
+docker push your-registry/workshop-inventory:latest
+```
+
+2. Update the image in `k8s/deployment.yaml` to point to your registry.
+
+3. Create the necessary directories on your Kubernetes nodes:
+```bash
+sudo mkdir -p /data/workshop-inventory
+sudo mkdir -p /data/workshop-inventory/photos
+sudo chmod 777 /data/workshop-inventory
+sudo chmod 777 /data/workshop-inventory/photos
+```
+
+4. Apply the Kubernetes manifests:
+```bash
+kubectl apply -f k8s/persistent-volume.yaml
+kubectl apply -f k8s/persistent-volume-claim.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+5. Get the external IP of your service:
+```bash
+kubectl get service workshop-inventory
+```
+
+The application will be available at `http://<EXTERNAL-IP>`
+
+#### Kubernetes Components
+- **Deployment**: Manages the application pods
+- **Service**: Exposes the application to the network
+- **PersistentVolume**: Provides storage for data and photos
+- **PersistentVolumeClaim**: Claims storage from the PersistentVolume
 
 ## Project Structure
 

@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workshop-inventory
+  labels:
+    app: workshop-inventory
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: workshop-inventory
+  template:
+    metadata:
+      labels:
+        app: workshop-inventory
+    spec:
+      containers:
+      - name: workshop-inventory
+        image: workshop-inventory:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: data-volume
+          mountPath: /app/dados.json
+          subPath: dados.json
+        - name: photos-volume
+          mountPath: /app/static/photos
+      volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: workshop-inventory-data
+      - name: photos-volume
+        persistentVolumeClaim:
+          claimName: workshop-inventory-photos 

@@ -3,11 +3,20 @@
     {
       "id": 1,
       "nome": "M4x10",
-      "descricao": "Parafuso M4x10",
+      "descricao": "Screw M4x10",
       "estante": "L1",
-      "prateleira": "5",
-      "compartimento": "3",
-      "foto": "1743817933904655000.jpeg"
+      "prateleira": "1",
+      "compartimento": "1",
+      "foto": "1743820074831307000.jpeg"
+    },
+    {
+      "id": 2,
+      "nome": "Fita hellerman",
+      "descricao": "Fita Hellerman nylon",
+      "estante": "L2",
+      "prateleira": "2",
+      "compartimento": "5",
+      "foto": "1743820209035841000.jpg"
     }
   ],
   "estantes": [
@@ -16,6 +25,9 @@
     },
     {
       "nome": "L2"
+    },
+    {
+      "nome": "L3"
     }
   ]
 }

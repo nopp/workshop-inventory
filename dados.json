@@ -6,17 +6,26 @@
       "descricao": "Screw M4x10",
       "estante": "L1",
       "prateleira": "1",
-      "compartimento": "1",
-      "foto": "1743820074831307000.jpeg"
+      "compartimento": "2",
+      "foto": "1743893343757552000.jpeg"
     },
     {
       "id": 2,
-      "nome": "Fita hellerman",
-      "descricao": "Fita Hellerman nylon",
+      "nome": "teste2",
+      "descricao": "asasa",
+      "estante": "L3",
+      "prateleira": "1",
+      "compartimento": "3",
+      "foto": ""
+    },
+    {
+      "id": 3,
+      "nome": "opa12",
+      "descricao": "opa opa",
       "estante": "L2",
-      "prateleira": "2",
-      "compartimento": "5",
-      "foto": "1743820209035841000.jpg"
+      "prateleira": "3",
+      "compartimento": "3",
+      "foto": ""
     }
   ],
   "estantes": [

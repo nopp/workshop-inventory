@@ -236,8 +236,52 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 }
 
 func novoItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		tmpl := template.Must(template.ParseFiles("templates/novo_item.html"))
+		tmpl.Execute(w, struct {
+			Error    string
+			Item     Item
+			Estantes []Estante
+			Config   Config
+		}{
+			Estantes: dados.Estantes,
+			Config:   config,
+		})
+		return
+	}
+
 	if r.Method == http.MethodPost {
 		r.ParseMultipartForm(10 << 20) // 10MB max memory
+
+		// Check for duplicate location
+		estante := r.FormValue("estante")
+		prateleira := r.FormValue("prateleira")
+		compartimento := r.FormValue("compartimento")
+
+		for _, item := range dados.Itens {
+			if item.Estante == estante && item.Prateleira == prateleira && item.Compartimento == compartimento {
+				// Return to the form with error message
+				tmpl := template.Must(template.ParseFiles("templates/novo_item.html"))
+				tmpl.Execute(w, struct {
+					Error    string
+					Item     Item
+					Estantes []Estante
+					Config   Config
+				}{
+					Error: fmt.Sprintf("An item already exists in this location (Shelf: %s, Rack: %s, Compartment: %s)", estante, prateleira, compartimento),
+					Item: Item{
+						Nome:          r.FormValue("nome"),
+						Descricao:     r.FormValue("descricao"),
+						Estante:       estante,
+						Prateleira:    prateleira,
+						Compartimento: compartimento,
+					},
+					Estantes: dados.Estantes,
+					Config:   config,
+				})
+				return
+			}
+		}
 
 		file, header, err := r.FormFile("foto")
 		var filename string
@@ -257,9 +301,9 @@ func novoItem(w http.ResponseWriter, r *http.Request) {
 			ID:            id,
 			Nome:          r.FormValue("nome"),
 			Descricao:     r.FormValue("descricao"),
-			Estante:       r.FormValue("estante"),
-			Prateleira:    r.FormValue("prateleira"),
-			Compartimento: r.FormValue("compartimento"),
+			Estante:       estante,
+			Prateleira:    prateleira,
+			Compartimento: compartimento,
 			Foto:          filename,
 		}
 		dados.Itens = append(dados.Itens, item)
@@ -282,6 +326,18 @@ func editarItem(w http.ResponseWriter, r *http.Request) {
 				itemIndex = i
 				currentItem = item
 				break
+			}
+		}
+
+		// Check for duplicate location (excluding current item)
+		estante := r.FormValue("estante")
+		prateleira := r.FormValue("prateleira")
+		compartimento := r.FormValue("compartimento")
+
+		for i, item := range dados.Itens {
+			if i != itemIndex && item.Estante == estante && item.Prateleira == prateleira && item.Compartimento == compartimento {
+				http.Error(w, "An item already exists in this location (Shelf: "+estante+", Rack: "+prateleira+", Compartment: "+compartimento+")", http.StatusBadRequest)
+				return
 			}
 		}
 
@@ -311,9 +367,9 @@ func editarItem(w http.ResponseWriter, r *http.Request) {
 			ID:            id,
 			Nome:          r.FormValue("nome"),
 			Descricao:     r.FormValue("descricao"),
-			Estante:       r.FormValue("estante"),
-			Prateleira:    r.FormValue("prateleira"),
-			Compartimento: r.FormValue("compartimento"),
+			Estante:       estante,
+			Prateleira:    prateleira,
+			Compartimento: compartimento,
 			Foto:          filename,
 		}
 

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Config.Title}} - New Item</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>New Item</h1>
+            <a href="/" class="btn btn-secondary">Back to List</a>
+        </div>
+
+        {{if .Error}}
+        <div class="alert alert-danger" role="alert">
+            {{.Error}}
+        </div>
+        {{end}}
+
+        <form method="post" enctype="multipart/form-data" class="bg-white p-4 rounded shadow">
+            <div class="mb-3">
+                <label for="nome" class="form-label">Name</label>
+                <input type="text" class="form-control" id="nome" name="nome" value="{{.Item.Nome}}" required>
+            </div>
+            <div class="mb-3">
+                <label for="descricao" class="form-label">Description</label>
+                <textarea class="form-control" id="descricao" name="descricao" rows="3">{{.Item.Descricao}}</textarea>
+            </div>
+            <div class="mb-3">
+                <label for="estante" class="form-label">Shelf</label>
+                <select class="form-select" id="estante" name="estante" required>
+                    <option value="">Select a shelf</option>
+                    {{range .Estantes}}
+                    <option value="{{.Nome}}" {{if eq .Nome $.Item.Estante}}selected{{end}}>{{.Nome}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="prateleira" class="form-label">Rack</label>
+                <input type="text" class="form-control" id="prateleira" name="prateleira" value="{{.Item.Prateleira}}" required>
+            </div>
+            <div class="mb-3">
+                <label for="compartimento" class="form-label">Compartment</label>
+                <input type="text" class="form-control" id="compartimento" name="compartimento" value="{{.Item.Compartimento}}" required>
+            </div>
+            <div class="mb-3">
+                <label for="foto" class="form-label">Photo</label>
+                <input type="file" class="form-control" id="foto" name="foto" accept="image/*">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Item</button>
+        </form>
+    </div>
+</body>
+</html> 

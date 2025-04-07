@@ -20,6 +20,13 @@ import (
 	"github.com/nfnt/resize"
 )
 
+type Config struct {
+	Title            string `json:"title"`
+	ItemsPerPage     int    `json:"items_per_page"`
+	PhotoThumbSize   int    `json:"photo_thumbnail_size"`
+	PhotoPreviewSize int    `json:"photo_preview_size"`
+}
+
 type Item struct {
 	ID            int    `json:"id"`
 	Nome          string `json:"nome"`
@@ -39,7 +46,40 @@ type Inventario struct {
 	Estantes []Estante `json:"estantes"`
 }
 
-var dados Inventario
+type PaginationData struct {
+	CurrentPage  int
+	TotalPages   int
+	ItemsPerPage int
+	TotalItems   int
+}
+
+var (
+	dados  Inventario
+	config Config
+)
+
+func carregarConfig() {
+	file, err := os.ReadFile("config.json")
+	if err != nil {
+		log.Printf("Warning: config.json not found, using default values")
+		config = Config{
+			Title:            "Workshop Inventory",
+			ItemsPerPage:     10,
+			PhotoThumbSize:   200,
+			PhotoPreviewSize: 600,
+		}
+		return
+	}
+	if err := json.Unmarshal(file, &config); err != nil {
+		log.Printf("Error loading config: %v", err)
+		config = Config{
+			Title:            "Workshop Inventory",
+			ItemsPerPage:     10,
+			PhotoThumbSize:   200,
+			PhotoPreviewSize: 600,
+		}
+	}
+}
 
 func carregarDados() {
 	file, err := os.ReadFile("dados.json")
@@ -54,7 +94,7 @@ func salvarDados() {
 }
 
 func generateThumbnail(img image.Image) image.Image {
-	return resize.Thumbnail(200, 200, img, resize.Lanczos3)
+	return resize.Thumbnail(uint(config.PhotoThumbSize), uint(config.PhotoThumbSize), img, resize.Lanczos3)
 }
 
 func saveImage(file io.Reader, filename string) (string, error) {
@@ -102,9 +142,31 @@ func saveImage(file io.Reader, filename string) (string, error) {
 }
 
 func main() {
+	carregarConfig()
 	carregarDados()
 
-	http.HandleFunc("/", listarItens)
+	// Create template functions
+	funcMap := template.FuncMap{
+		"add":      func(a, b int) int { return a + b },
+		"subtract": func(a, b int) int { return a - b },
+		"seq": func(start, end int) []int {
+			var result []int
+			for i := start; i <= end; i++ {
+				result = append(result, i)
+			}
+			return result
+		},
+		"js": func(s string) string {
+			return template.JSEscapeString(s)
+		},
+	}
+
+	// Parse templates with custom functions
+	tmpl := template.Must(template.New("").Funcs(funcMap).ParseFiles("templates/index.html", "templates/estantes.html", "templates/editar_item.html"))
+
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		listarItens(w, r, tmpl)
+	})
 	http.HandleFunc("/novo", novoItem)
 	http.HandleFunc("/editar", editarItem)
 	http.HandleFunc("/deletar", deletarItem)
@@ -116,13 +178,16 @@ func main() {
 
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
-	log.Println("Servidor iniciado em :8080")
+	log.Println("Server started on :8080")
 	http.ListenAndServe(":8080", nil)
 }
 
-func listarItens(w http.ResponseWriter, r *http.Request) {
-	tmpl := template.Must(template.ParseFiles("templates/index.html"))
+func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template) {
 	busca := strings.TrimSpace(strings.ToLower(r.URL.Query().Get("q")))
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
 
 	var itensFiltrados []Item
 	if busca != "" {
@@ -135,14 +200,38 @@ func listarItens(w http.ResponseWriter, r *http.Request) {
 		itensFiltrados = dados.Itens
 	}
 
-	tmpl.Execute(w, struct {
-		Itens    []Item
-		Estantes []Estante
-		Query    string
+	// Calculate pagination
+	totalItems := len(itensFiltrados)
+	totalPages := (totalItems + config.ItemsPerPage - 1) / config.ItemsPerPage
+	if page > totalPages {
+		page = totalPages
+	}
+
+	// Get items for current page
+	startIndex := (page - 1) * config.ItemsPerPage
+	endIndex := startIndex + config.ItemsPerPage
+	if endIndex > totalItems {
+		endIndex = totalItems
+	}
+	pageItems := itensFiltrados[startIndex:endIndex]
+
+	tmpl.ExecuteTemplate(w, "index.html", struct {
+		Itens      []Item
+		Estantes   []Estante
+		Query      string
+		Pagination PaginationData
+		Config     Config
 	}{
-		Itens:    itensFiltrados,
+		Itens:    pageItems,
 		Estantes: dados.Estantes,
 		Query:    r.URL.Query().Get("q"),
+		Pagination: PaginationData{
+			CurrentPage:  page,
+			TotalPages:   totalPages,
+			ItemsPerPage: config.ItemsPerPage,
+			TotalItems:   totalItems,
+		},
+		Config: config,
 	})
 }
 

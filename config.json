@@ -3,7 +3,6 @@
   "items_per_page": 10,
   "photo_thumbnail_size": 100,
   "photo_preview_size": 600,
-  "secret_key": "admin",
   "session_timeout": 3600,
   "max_login_attempts": 5,
   "lockout_duration": 300

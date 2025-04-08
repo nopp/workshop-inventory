@@ -19,12 +19,12 @@ import (
 
 	"github.com/gorilla/sessions"
 	"github.com/nfnt/resize"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type User struct {
 	Username string `json:"username"`
-	Password string `json:"password"` // This will store the hashed password
+	Password string `json:"password"`
+	Role     string `json:"role"` // "admin" or "viewer"
 }
 
 type Config struct {
@@ -32,7 +32,9 @@ type Config struct {
 	ItemsPerPage     int    `json:"items_per_page"`
 	PhotoThumbSize   int    `json:"photo_thumbnail_size"`
 	PhotoPreviewSize int    `json:"photo_preview_size"`
-	SecretKey        string `json:"secret_key"`
+	SessionTimeout   int    `json:"session_timeout"`
+	MaxLoginAttempts int    `json:"max_login_attempts"`
+	LockoutDuration  int    `json:"lockout_duration"`
 }
 
 type Item struct {
@@ -61,37 +63,43 @@ type PaginationData struct {
 	TotalItems   int
 }
 
+type Usuario struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
+	Foto     string `json:"foto"`
+}
+
+type UsuariosData struct {
+	Usuarios []Usuario `json:"usuarios"`
+}
+
 var (
-	dados  Inventario
-	config Config
-	store  *sessions.CookieStore
-	users  []User
+	dados        Inventario
+	config       Config
+	store        *sessions.CookieStore
+	users        []User
+	usuariosData UsuariosData
 )
 
 func carregarConfig() {
 	file, err := os.ReadFile("config.json")
-	if err != nil {
-		log.Printf("Warning: config.json not found, using default values")
+	if err == nil {
+		json.Unmarshal(file, &config)
+	} else {
 		config = Config{
 			Title:            "Workshop Inventory",
 			ItemsPerPage:     10,
-			PhotoThumbSize:   200,
+			PhotoThumbSize:   100,
 			PhotoPreviewSize: 600,
-			SecretKey:        "your-secret-key-here", // Change this in production
-		}
-		return
-	}
-	if err := json.Unmarshal(file, &config); err != nil {
-		log.Printf("Error loading config: %v", err)
-		config = Config{
-			Title:            "Workshop Inventory",
-			ItemsPerPage:     10,
-			PhotoThumbSize:   200,
-			PhotoPreviewSize: 600,
-			SecretKey:        "your-secret-key-here", // Change this in production
+			SessionTimeout:   3600,
+			MaxLoginAttempts: 5,
+			LockoutDuration:  300,
 		}
 	}
-	store = sessions.NewCookieStore([]byte(config.SecretKey))
+	// Initialize session store with a fixed secret key
+	store = sessions.NewCookieStore([]byte("your-secure-session-key-here"))
 }
 
 func carregarDados() {
@@ -107,16 +115,19 @@ func salvarDados() {
 }
 
 func carregarUsuarios() {
-	file, err := os.ReadFile("users.json")
+	file, err := os.ReadFile("usuarios.json")
 	if err == nil {
-		json.Unmarshal(file, &users)
+		json.Unmarshal(file, &usuariosData)
 	} else {
 		// Create default admin user if no users file exists
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
-		users = []User{
-			{
-				Username: "admin",
-				Password: string(hashedPassword),
+		usuariosData = UsuariosData{
+			Usuarios: []Usuario{
+				{
+					ID:       1,
+					Username: "admin",
+					Password: "admin", // Default password, should be changed after first login
+					Role:     "admin",
+				},
 			},
 		}
 		salvarUsuarios()
@@ -124,8 +135,8 @@ func carregarUsuarios() {
 }
 
 func salvarUsuarios() {
-	data, _ := json.MarshalIndent(users, "", "  ")
-	ioutil.WriteFile("users.json", data, 0644)
+	data, _ := json.MarshalIndent(usuariosData, "", "  ")
+	os.WriteFile("usuarios.json", data, 0644)
 }
 
 func isAuthenticated(r *http.Request) bool {
@@ -138,6 +149,27 @@ func requireAuth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !isAuthenticated(r) {
 			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		next(w, r)
+	}
+}
+
+func getUserRole(r *http.Request) string {
+	session, _ := store.Get(r, "session")
+	role, _ := session.Values["role"].(string)
+	return role
+}
+
+func requireRole(role string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isAuthenticated(r) {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		userRole := getUserRole(r)
+		if userRole != role {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 		next(w, r)
@@ -160,17 +192,15 @@ func login(w http.ResponseWriter, r *http.Request) {
 		username := r.FormValue("username")
 		password := r.FormValue("password")
 
-		for _, user := range users {
-			if user.Username == username {
-				err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-				if err == nil {
-					session, _ := store.Get(r, "session")
-					session.Values["authenticated"] = true
-					session.Values["username"] = username
-					session.Save(r, w)
-					http.Redirect(w, r, "/", http.StatusSeeOther)
-					return
-				}
+		for _, user := range usuariosData.Usuarios {
+			if user.Username == username && user.Password == password {
+				session, _ := store.Get(r, "session")
+				session.Values["authenticated"] = true
+				session.Values["username"] = username
+				session.Values["role"] = user.Role
+				session.Save(r, w)
+				http.Redirect(w, r, "/", http.StatusSeeOther)
+				return
 			}
 		}
 
@@ -274,13 +304,19 @@ func main() {
 	http.HandleFunc("/", requireAuth(func(w http.ResponseWriter, r *http.Request) {
 		listarItens(w, r, tmpl)
 	}))
-	http.HandleFunc("/novo", requireAuth(novoItem))
-	http.HandleFunc("/editar", requireAuth(editarItem))
-	http.HandleFunc("/deletar", requireAuth(deletarItem))
-	http.HandleFunc("/estantes", requireAuth(listarEstantes))
-	http.HandleFunc("/estantes/novo", requireAuth(novaEstante))
-	http.HandleFunc("/estantes/editar", requireAuth(editarEstante))
-	http.HandleFunc("/estantes/deletar", requireAuth(deletarEstante))
+	http.HandleFunc("/novo", requireRole("admin", novoItem))
+	http.HandleFunc("/editar", requireRole("admin", editarItem))
+	http.HandleFunc("/deletar", requireRole("admin", deletarItem))
+	http.HandleFunc("/estantes", requireRole("admin", listarEstantes))
+	http.HandleFunc("/estantes/novo", requireRole("admin", novaEstante))
+	http.HandleFunc("/estantes/editar", requireRole("admin", editarEstante))
+	http.HandleFunc("/estantes/deletar", requireRole("admin", deletarEstante))
+
+	// Add user management routes
+	http.HandleFunc("/usuarios", listarUsuarios)
+	http.HandleFunc("/usuarios/novo", novoUsuario)
+	http.HandleFunc("/usuarios/editar", editarUsuario)
+	http.HandleFunc("/usuarios/deletar", deletarUsuario)
 
 	log.Println("Server started on :8080")
 	http.ListenAndServe(":8080", nil)
@@ -307,6 +343,9 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 	// Calculate pagination
 	totalItems := len(itensFiltrados)
 	totalPages := (totalItems + config.ItemsPerPage - 1) / config.ItemsPerPage
+	if totalPages == 0 {
+		totalPages = 1
+	}
 	if page > totalPages {
 		page = totalPages
 	}
@@ -317,10 +356,15 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 	if endIndex > totalItems {
 		endIndex = totalItems
 	}
-	pageItems := itensFiltrados[startIndex:endIndex]
+
+	var pageItems []Item
+	if startIndex < totalItems {
+		pageItems = itensFiltrados[startIndex:endIndex]
+	}
 
 	session, _ := store.Get(r, "session")
 	username, _ := session.Values["username"].(string)
+	role, _ := session.Values["role"].(string)
 
 	tmpl.ExecuteTemplate(w, "index.html", struct {
 		Itens      []Item
@@ -329,6 +373,7 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 		Pagination PaginationData
 		Config     Config
 		Username   string
+		Role       string
 	}{
 		Itens:    pageItems,
 		Estantes: dados.Estantes,
@@ -341,6 +386,7 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 		},
 		Config:   config,
 		Username: username,
+		Role:     role,
 	})
 }
 
@@ -549,4 +595,203 @@ func editarEstante(w http.ResponseWriter, r *http.Request) {
 		salvarDados()
 		http.Redirect(w, r, "/estantes", http.StatusSeeOther)
 	}
+}
+
+func listarUsuarios(w http.ResponseWriter, r *http.Request) {
+	if !isAuthenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	session, _ := store.Get(r, "session")
+	role, _ := session.Values["role"].(string)
+	if role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	tmpl := template.Must(template.ParseFiles("templates/usuarios.html"))
+	tmpl.Execute(w, struct {
+		Usuarios []Usuario
+		Error    string
+		Config   Config
+		Username string
+		Role     string
+	}{
+		Usuarios: usuariosData.Usuarios,
+		Config:   config,
+		Username: session.Values["username"].(string),
+		Role:     role,
+	})
+}
+
+func novoUsuario(w http.ResponseWriter, r *http.Request) {
+	if !isAuthenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	session, _ := store.Get(r, "session")
+	role, _ := session.Values["role"].(string)
+	if role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		r.ParseMultipartForm(10 << 20) // 10MB max memory
+
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		role := r.FormValue("role")
+
+		// Check if username already exists
+		for _, user := range usuariosData.Usuarios {
+			if user.Username == username {
+				tmpl := template.Must(template.ParseFiles("templates/usuarios.html"))
+				tmpl.Execute(w, struct {
+					Usuarios []Usuario
+					Error    string
+					Config   Config
+					Username string
+					Role     string
+				}{
+					Usuarios: usuariosData.Usuarios,
+					Error:    "Username already exists",
+					Config:   config,
+					Username: session.Values["username"].(string),
+					Role:     role,
+				})
+				return
+			}
+		}
+
+		// Handle photo upload
+		file, header, err := r.FormFile("foto")
+		var filename string
+		if err == nil {
+			defer file.Close()
+			ext := filepath.Ext(header.Filename)
+			filename = fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+			filename, err = saveImage(file, filename)
+			if err != nil {
+				log.Printf("Error saving image: %v", err)
+				filename = ""
+			}
+		}
+
+		id := len(usuariosData.Usuarios) + 1
+		usuario := Usuario{
+			ID:       id,
+			Username: username,
+			Password: password,
+			Role:     role,
+			Foto:     filename,
+		}
+		usuariosData.Usuarios = append(usuariosData.Usuarios, usuario)
+		salvarUsuarios()
+		http.Redirect(w, r, "/usuarios", http.StatusSeeOther)
+	}
+}
+
+func editarUsuario(w http.ResponseWriter, r *http.Request) {
+	if !isAuthenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	session, _ := store.Get(r, "session")
+	role, _ := session.Values["role"].(string)
+	if role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		r.ParseMultipartForm(10 << 20) // 10MB max memory
+
+		id, _ := strconv.Atoi(r.FormValue("id"))
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+		role := r.FormValue("role")
+
+		// Find the user and update
+		for i, user := range usuariosData.Usuarios {
+			if user.ID == id {
+				// Check if username is being changed to an existing one
+				if user.Username != username {
+					for _, otherUser := range usuariosData.Usuarios {
+						if otherUser.Username == username {
+							http.Error(w, "Username already exists", http.StatusBadRequest)
+							return
+						}
+					}
+				}
+
+				// Handle photo upload
+				file, header, err := r.FormFile("foto")
+				filename := user.Foto // Keep current photo by default
+				if err == nil {
+					// New photo uploaded
+					defer file.Close()
+					// Delete old photo if exists
+					if user.Foto != "" {
+						os.Remove(filepath.Join("static/photos", user.Foto))
+						os.Remove(filepath.Join("static/photos/thumbs", user.Foto))
+					}
+					// Save new photo
+					ext := filepath.Ext(header.Filename)
+					filename = fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
+					filename, err = saveImage(file, filename)
+					if err != nil {
+						log.Printf("Error saving image: %v", err)
+						filename = user.Foto // Keep old photo on error
+					}
+				}
+
+				// Update user
+				usuariosData.Usuarios[i] = Usuario{
+					ID:       id,
+					Username: username,
+					Password: password,
+					Role:     role,
+					Foto:     filename,
+				}
+				salvarUsuarios()
+				http.Redirect(w, r, "/usuarios", http.StatusSeeOther)
+				return
+			}
+		}
+		http.Error(w, "User not found", http.StatusNotFound)
+	}
+}
+
+func deletarUsuario(w http.ResponseWriter, r *http.Request) {
+	if !isAuthenticated(r) {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	session, _ := store.Get(r, "session")
+	role, _ := session.Values["role"].(string)
+	if role != "admin" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+	for i, user := range usuariosData.Usuarios {
+		if user.ID == id {
+			// Delete user's photo if exists
+			if user.Foto != "" {
+				os.Remove(filepath.Join("static/photos", user.Foto))
+				os.Remove(filepath.Join("static/photos/thumbs", user.Foto))
+			}
+			usuariosData.Usuarios = append(usuariosData.Usuarios[:i], usuariosData.Usuarios[i+1:]...)
+			salvarUsuarios()
+			http.Redirect(w, r, "/usuarios", http.StatusSeeOther)
+			return
+		}
+	}
+	http.Error(w, "User not found", http.StatusNotFound)
 }

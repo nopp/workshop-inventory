@@ -26,6 +26,15 @@
       "prateleira": "3",
       "compartimento": "3",
       "foto": ""
+    },
+    {
+      "id": 4,
+      "nome": "juca",
+      "descricao": "juca123",
+      "estante": "L3",
+      "prateleira": "1",
+      "compartimento": "1",
+      "foto": ""
     }
   ],
   "estantes": [

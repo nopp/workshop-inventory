@@ -17,14 +17,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/sessions"
 	"github.com/nfnt/resize"
+	"golang.org/x/crypto/bcrypt"
 )
+
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"` // This will store the hashed password
+}
 
 type Config struct {
 	Title            string `json:"title"`
 	ItemsPerPage     int    `json:"items_per_page"`
 	PhotoThumbSize   int    `json:"photo_thumbnail_size"`
 	PhotoPreviewSize int    `json:"photo_preview_size"`
+	SecretKey        string `json:"secret_key"`
 }
 
 type Item struct {
@@ -56,6 +64,8 @@ type PaginationData struct {
 var (
 	dados  Inventario
 	config Config
+	store  *sessions.CookieStore
+	users  []User
 )
 
 func carregarConfig() {
@@ -67,6 +77,7 @@ func carregarConfig() {
 			ItemsPerPage:     10,
 			PhotoThumbSize:   200,
 			PhotoPreviewSize: 600,
+			SecretKey:        "your-secret-key-here", // Change this in production
 		}
 		return
 	}
@@ -77,8 +88,10 @@ func carregarConfig() {
 			ItemsPerPage:     10,
 			PhotoThumbSize:   200,
 			PhotoPreviewSize: 600,
+			SecretKey:        "your-secret-key-here", // Change this in production
 		}
 	}
+	store = sessions.NewCookieStore([]byte(config.SecretKey))
 }
 
 func carregarDados() {
@@ -91,6 +104,93 @@ func carregarDados() {
 func salvarDados() {
 	data, _ := json.MarshalIndent(dados, "", "  ")
 	ioutil.WriteFile("dados.json", data, 0644)
+}
+
+func carregarUsuarios() {
+	file, err := os.ReadFile("users.json")
+	if err == nil {
+		json.Unmarshal(file, &users)
+	} else {
+		// Create default admin user if no users file exists
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+		users = []User{
+			{
+				Username: "admin",
+				Password: string(hashedPassword),
+			},
+		}
+		salvarUsuarios()
+	}
+}
+
+func salvarUsuarios() {
+	data, _ := json.MarshalIndent(users, "", "  ")
+	ioutil.WriteFile("users.json", data, 0644)
+}
+
+func isAuthenticated(r *http.Request) bool {
+	session, _ := store.Get(r, "session")
+	auth, ok := session.Values["authenticated"].(bool)
+	return ok && auth
+}
+
+func requireAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isAuthenticated(r) {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+		next(w, r)
+	}
+}
+
+func login(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		tmpl := template.Must(template.ParseFiles("templates/login.html"))
+		tmpl.Execute(w, struct {
+			Error  string
+			Config Config
+		}{
+			Config: config,
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		username := r.FormValue("username")
+		password := r.FormValue("password")
+
+		for _, user := range users {
+			if user.Username == username {
+				err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
+				if err == nil {
+					session, _ := store.Get(r, "session")
+					session.Values["authenticated"] = true
+					session.Values["username"] = username
+					session.Save(r, w)
+					http.Redirect(w, r, "/", http.StatusSeeOther)
+					return
+				}
+			}
+		}
+
+		tmpl := template.Must(template.ParseFiles("templates/login.html"))
+		tmpl.Execute(w, struct {
+			Error  string
+			Config Config
+		}{
+			Error:  "Invalid username or password",
+			Config: config,
+		})
+	}
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	session, _ := store.Get(r, "session")
+	session.Values["authenticated"] = false
+	delete(session.Values, "username")
+	session.Save(r, w)
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }
 
 func generateThumbnail(img image.Image) image.Image {
@@ -144,6 +244,7 @@ func saveImage(file io.Reader, filename string) (string, error) {
 func main() {
 	carregarConfig()
 	carregarDados()
+	carregarUsuarios()
 
 	// Create template functions
 	funcMap := template.FuncMap{
@@ -164,19 +265,22 @@ func main() {
 	// Parse templates with custom functions
 	tmpl := template.Must(template.New("").Funcs(funcMap).ParseFiles("templates/index.html", "templates/estantes.html", "templates/editar_item.html"))
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		listarItens(w, r, tmpl)
-	})
-	http.HandleFunc("/novo", novoItem)
-	http.HandleFunc("/editar", editarItem)
-	http.HandleFunc("/deletar", deletarItem)
-
-	http.HandleFunc("/estantes", listarEstantes)
-	http.HandleFunc("/estantes/novo", novaEstante)
-	http.HandleFunc("/estantes/editar", editarEstante)
-	http.HandleFunc("/estantes/deletar", deletarEstante)
-
+	// Public routes
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/logout", logout)
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	// Protected routes
+	http.HandleFunc("/", requireAuth(func(w http.ResponseWriter, r *http.Request) {
+		listarItens(w, r, tmpl)
+	}))
+	http.HandleFunc("/novo", requireAuth(novoItem))
+	http.HandleFunc("/editar", requireAuth(editarItem))
+	http.HandleFunc("/deletar", requireAuth(deletarItem))
+	http.HandleFunc("/estantes", requireAuth(listarEstantes))
+	http.HandleFunc("/estantes/novo", requireAuth(novaEstante))
+	http.HandleFunc("/estantes/editar", requireAuth(editarEstante))
+	http.HandleFunc("/estantes/deletar", requireAuth(deletarEstante))
 
 	log.Println("Server started on :8080")
 	http.ListenAndServe(":8080", nil)
@@ -215,12 +319,16 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 	}
 	pageItems := itensFiltrados[startIndex:endIndex]
 
+	session, _ := store.Get(r, "session")
+	username, _ := session.Values["username"].(string)
+
 	tmpl.ExecuteTemplate(w, "index.html", struct {
 		Itens      []Item
 		Estantes   []Estante
 		Query      string
 		Pagination PaginationData
 		Config     Config
+		Username   string
 	}{
 		Itens:    pageItems,
 		Estantes: dados.Estantes,
@@ -231,7 +339,8 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 			ItemsPerPage: config.ItemsPerPage,
 			TotalItems:   totalItems,
 		},
-		Config: config,
+		Config:   config,
+		Username: username,
 	})
 }
 

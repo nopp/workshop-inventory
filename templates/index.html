@@ -41,7 +41,10 @@
   <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h1>{{.Config.Title}}</h1>
-      <a href="/estantes" class="btn btn-secondary">Manage Shelves</a>
+      <div class="d-flex align-items-center">
+        <span class="me-3">Welcome, {{.Username}}</span>
+        <a href="/logout" class="btn btn-outline-danger">Logout</a>
+      </div>
     </div>
 
     <form action="/" method="get" class="card p-3 mb-4">

@@ -4,6 +4,9 @@ A comprehensive inventory management system for workshops, built with Go and fea
 
 ![Screenshot of the Workshop Inventory System](system.png)
 
+## TODO
+- **Database JSON to MySQL or PGSQL**
+
 ## Features
 
 - **User Management**

@@ -6,7 +6,7 @@ A comprehensive inventory management system for workshops, built with Go and fea
 
 ## TODO
 - **Database JSON to MySQL or PGSQL**
-- **Translate poruguese to english some parts of the code**
+- **Translate portuguese to english some parts of the code**
 
 ## Features
 

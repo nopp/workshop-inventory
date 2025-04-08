@@ -1,189 +1,125 @@
 # Workshop Inventory System
 
-A simple and efficient inventory management system for workshops, built with Go and Bootstrap.
-
-The database will save all items in the dados.json
-
-Obs:. I started to translate all code from portugues to english.
+A comprehensive inventory management system for workshops, built with Go and featuring a modern web interface.
 
 ![Screenshot of the Workshop Inventory System](system.png)
 
 ## Features
 
-- 📦 **Item Management**
+- **User Management**
+  - Role-based access control (Admin/Viewer)
+  - User profile photos
+  - Secure authentication
+  - User creation, editing, and deletion (admin only)
+
+- **Inventory Management**
   - Add, edit, and delete items
-  - Organize items by shelf, rack, and compartment
-  - Search items by name or description
-  - Photo upload with thumbnail generation
-  - Hover preview for item photos
+  - Item photos with thumbnails
+  - Search functionality
+  - Pagination support
 
-- 📚 **Shelf Management**
-  - Create and manage shelves
-  - Edit shelf names
-  - Delete shelves
+- **Shelf Management**
+  - Organize items by shelves
+  - Add, edit, and delete shelves
+  - Track item locations
 
-- 🖼️ **Photo Features**
-  - Upload photos for items
-  - Automatic thumbnail generation
-  - Hover preview at 60% of original size
-  - Click to view full-size image
+- **Modern UI**
+  - Responsive design
+  - Photo previews
+  - Intuitive navigation
+  - Bootstrap 5 styling
 
-## Requirements
+## Configuration
 
-- Go 1.16 or higher
-- Go modules enabled
-- Docker (optional)
+The system uses `config.json` for configuration:
+
+```json
+{
+  "title": "Workshop Inventory",
+  "items_per_page": 10,
+  "photo_thumbnail_size": 100,
+  "photo_preview_size": 600,
+  "session_timeout": 3600,
+  "max_login_attempts": 5,
+  "lockout_duration": 300
+}
+```
 
 ## Installation
 
-### Option 1: Local Installation
-
 1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/workshop-inventory.git
-cd workshop-inventory
-```
+   ```bash
+   git clone https://github.com/yourusername/workshop-inventory.git
+   cd workshop-inventory
+   ```
 
 2. Install dependencies:
-```bash
-go mod tidy
-```
+   ```bash
+   go get github.com/gorilla/sessions
+   go get github.com/nfnt/resize
+   ```
 
-3. Run the application:
-```bash
-go run main.go
-```
+3. Create required directories:
+   ```bash
+   mkdir -p static/photos static/photos/thumbs
+   ```
 
-The application will be available at `http://localhost:8080`
+4. Run the application:
+   ```bash
+   go run main.go
+   ```
 
-### Option 2: Docker Installation
+The server will start on port 8080.
 
-1. Clone the repository:
-```bash
-git clone https://github.com/yourusername/workshop-inventory.git
-cd workshop-inventory
-```
+## First-Time Setup
 
-2. Build the Docker image:
-```bash
-docker build -t workshop-inventory .
-```
+1. The system creates a default admin user on first run:
+   - Username: `admin`
+   - Password: `admin`
 
-3. Run the container:
-```bash
-docker run -d \
-  -p 8080:8080 \
-  -v $(pwd)/dados.json:/app/dados.json \
-  -v $(pwd)/static/photos:/app/static/photos \
-  workshop-inventory
-```
+2. Log in and change the default admin password immediately.
 
-The application will be available at `http://localhost:8080`
+3. Create additional users as needed through the user management interface.
 
-#### Docker Volume Mounts
-- `dados.json`: Persists the inventory data
-- `static/photos`: Persists uploaded photos and thumbnails
+## Usage
 
-### Option 3: Kubernetes Installation
+### Admin Features
+- Manage inventory items
+- Manage shelves
+- Manage users
+- Full access to all system features
 
-1. Build and push the Docker image to your registry:
-```bash
-docker build -t your-registry/workshop-inventory:latest .
-docker push your-registry/workshop-inventory:latest
-```
+### Viewer Features
+- View inventory
+- Search items
+- View item details
+- No modification rights
 
-2. Update the image in `k8s/deployment.yaml` to point to your registry.
+## Security
 
-3. Create the necessary directories on your Kubernetes nodes:
-```bash
-sudo mkdir -p /data/workshop-inventory
-sudo mkdir -p /data/workshop-inventory/photos
-sudo chmod 777 /data/workshop-inventory
-sudo chmod 777 /data/workshop-inventory/photos
-```
+- Role-based access control
+- Session management
+- Secure file handling
+- Input validation
+- XSS protection
 
-4. Apply the Kubernetes manifests:
-```bash
-kubectl apply -f k8s/persistent-volume.yaml
-kubectl apply -f k8s/persistent-volume-claim.yaml
-kubectl apply -f k8s/deployment.yaml
-kubectl apply -f k8s/service.yaml
-```
-
-5. Get the external IP of your service:
-```bash
-kubectl get service workshop-inventory
-```
-
-The application will be available at `http://<EXTERNAL-IP>`
-
-#### Kubernetes Components
-- **Deployment**: Manages the application pods
-- **Service**: Exposes the application to the network
-- **PersistentVolume**: Provides storage for data and photos
-- **PersistentVolumeClaim**: Claims storage from the PersistentVolume
-
-## Project Structure
+## File Structure
 
 ```
 workshop-inventory/
 ├── main.go              # Main application code
-├── templates/           # HTML templates
-│   ├── index.html      # Main inventory page
-│   └── estantes.html   # Shelves management page
-├── static/             # Static files
-│   └── photos/         # Uploaded photos
-│       └── thumbs/     # Generated thumbnails
-└── dados.json          # Data storage
+├── config.json          # Configuration file
+├── dados.json           # Inventory data
+├── usuarios.json        # User data
+├── static/              # Static files
+│   └── photos/          # Item and user photos
+│       └── thumbs/      # Photo thumbnails
+└── templates/           # HTML templates
+    ├── index.html       # Main inventory page
+    ├── login.html       # Login page
+    ├── usuarios.html    # User management page
+    └── estantes.html    # Shelf management page
 ```
-
-## Usage
-
-### Managing Items
-
-1. **Adding Items**
-   - Fill in the item details (name, description, location)
-   - Upload a photo (optional)
-   - Click "Cadastrar" to save
-
-2. **Editing Items**
-   - Click the "Editar" button next to an item
-   - Modify the details in the modal form
-   - Upload a new photo if needed
-   - Click "Salvar" to update
-
-3. **Deleting Items**
-   - Click the "Excluir" button next to an item
-   - Confirm the deletion
-
-4. **Searching Items**
-   - Use the search box at the top
-   - Search by name or description
-   - Results update in real-time
-
-### Managing Shelves
-
-1. **Adding Shelves**
-   - Click "Gerenciar Estantes"
-   - Enter the shelf name
-   - Click "Adicionar"
-
-2. **Editing Shelves**
-   - Click "Editar" next to a shelf
-   - Modify the name
-   - Click "Salvar"
-
-3. **Deleting Shelves**
-   - Click "Excluir" next to a shelf
-   - Confirm the deletion
-
-## Photo Management
-
-- Photos are automatically resized and thumbnails are generated
-- Hover over thumbnails to see a larger preview
-- Click thumbnails to view the full-size image
-- Photos are stored in the `static/photos` directory
-- Thumbnails are stored in `static/photos/thumbs`
 
 ## Contributing
 

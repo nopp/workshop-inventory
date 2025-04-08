@@ -7,33 +7,26 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     .item-photo {
-      object-fit: cover;
-      border-radius: 4px;
+      max-width: {{.Config.PhotoThumbSize}}px;
+      max-height: {{.Config.PhotoThumbSize}}px;
+      object-fit: contain;
+      cursor: pointer;
     }
     .photo-preview {
+      position: fixed;
+      z-index: 1000;
+      pointer-events: none;
+      max-width: {{.Config.PhotoPreviewSize}}px;
+      max-height: {{.Config.PhotoPreviewSize}}px;
+      object-fit: contain;
       display: none;
-      margin-top: 10px;
+      border: 1px solid #ccc;
+      background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
     .thumb-container {
       position: relative;
       display: inline-block;
-    }
-    .hover-preview {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
-    .hover-preview img {
-      max-width: 60vw;
-      max-height: 60vh;
-      object-fit: contain;
-    }
-    .thumb-container:hover .hover-preview {
-      display: block;
     }
   </style>
 </head>
@@ -90,12 +83,7 @@
             <td>
               {{if .Foto}}
                 <div class="thumb-container">
-                  <a href="/static/photos/{{.Foto}}" target="_blank">
-                    <img src="/static/photos/thumbs/{{.Foto}}" class="item-photo" alt="{{.Nome}}" style="width: {{$.Config.PhotoThumbSize}}px; height: {{$.Config.PhotoThumbSize}}px;">
-                  </a>
-                  <div class="hover-preview">
-                    <img src="/static/photos/{{.Foto}}" alt="{{.Nome}}">
-                  </div>
+                  <img src="/static/photos/thumbs/{{.Foto}}" class="item-photo" alt="{{.Nome}}" style="width: {{$.Config.PhotoThumbSize}}px; height: {{$.Config.PhotoThumbSize}}px;">
                 </div>
               {{else}}
                 <div class="item-photo bg-secondary" style="width: {{$.Config.PhotoThumbSize}}px; height: {{$.Config.PhotoThumbSize}}px;"></div>
@@ -108,8 +96,8 @@
             <td>{{.Compartimento}}</td>
             {{if eq $.Role "admin"}}
             <td>
-              <button class="btn btn-sm btn-primary" onclick="editItem({{.ID}}, '{{js .Nome}}', '{{js .Descricao}}', '{{js .Estante}}', '{{js .Prateleira}}', '{{js .Compartimento}}')">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteItem({{.ID}})">Delete</button>
+              <a href="/editar?id={{.ID}}" class="btn btn-sm btn-primary">Edit</a>
+              <button class="btn btn-sm btn-danger delete-btn" data-id="{{.ID}}">Delete</button>
             </td>
             {{end}}
           </tr>
@@ -143,15 +131,46 @@
 
   {{if eq .Role "admin"}}
   <script>
-    function editItem(id, nome, descricao, estante, prateleira, compartimento) {
-      window.location.href = `/editar?id=${id}&nome=${encodeURIComponent(nome)}&descricao=${encodeURIComponent(descricao)}&estante=${encodeURIComponent(estante)}&prateleira=${encodeURIComponent(prateleira)}&compartimento=${encodeURIComponent(compartimento)}`;
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+      const preview = document.createElement('img');
+      preview.className = 'photo-preview';
+      document.body.appendChild(preview);
 
-    function deleteItem(id) {
-      if (confirm('Are you sure you want to delete this item?')) {
-        window.location.href = `/deletar?id=${id}`;
-      }
-    }
+      document.querySelectorAll('.item-photo').forEach(img => {
+        img.addEventListener('mousemove', function(e) {
+          // Get the full-size image URL directly from the data attribute
+          const fullSizeUrl = this.src.replace('/thumbs/', '/');
+          preview.src = fullSizeUrl;
+          preview.style.display = 'block';
+          
+          // Set the preview size based on configuration
+          preview.style.maxWidth = '{{.Config.PhotoPreviewSize}}px';
+          preview.style.maxHeight = '{{.Config.PhotoPreviewSize}}px';
+          
+          // Calculate position to avoid going off screen
+          const x = e.clientX + 20;
+          const y = e.clientY + 20;
+          const maxX = window.innerWidth - preview.width - 20;
+          const maxY = window.innerHeight - preview.height - 20;
+          
+          preview.style.left = Math.min(x, maxX) + 'px';
+          preview.style.top = Math.min(y, maxY) + 'px';
+        });
+
+        img.addEventListener('mouseleave', function() {
+          preview.style.display = 'none';
+        });
+      });
+
+      // Delete button handlers
+      document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          if (confirm('Are you sure you want to delete this item?')) {
+            window.location.href = `/deletar?id=${this.getAttribute('data-id')}`;
+          }
+        });
+      });
+    });
   </script>
   {{end}}
 </body>

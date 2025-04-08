@@ -468,6 +468,27 @@ func novoItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func editarItem(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		id, _ := strconv.Atoi(r.URL.Query().Get("id"))
+		var item Item
+		for _, i := range dados.Itens {
+			if i.ID == id {
+				item = i
+				break
+			}
+		}
+
+		tmpl := template.Must(template.ParseFiles("templates/editar.html"))
+		tmpl.Execute(w, struct {
+			Item   Item
+			Config Config
+		}{
+			Item:   item,
+			Config: config,
+		})
+		return
+	}
+
 	if r.Method == http.MethodPost {
 		r.ParseMultipartForm(10 << 20) // 10MB max memory
 

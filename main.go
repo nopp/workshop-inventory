@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -348,6 +349,11 @@ func listarItens(w http.ResponseWriter, r *http.Request, tmpl *template.Template
 	} else {
 		itensFiltrados = dados.Itens
 	}
+
+	// Sort items by ID descending (newest first)
+	sort.Slice(itensFiltrados, func(i, j int) bool {
+		return itensFiltrados[i].ID > itensFiltrados[j].ID
+	})
 
 	// Calculate pagination
 	totalItems := len(itensFiltrados)

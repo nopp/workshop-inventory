@@ -35,6 +35,15 @@
       "prateleira": "P-0001",
       "compartimento": "1",
       "foto": "1744118477668460000.png"
+    },
+    {
+      "id": 5,
+      "nome": "opa",
+      "descricao": "opa novo produto",
+      "estante": "L1",
+      "prateleira": "P-0005",
+      "compartimento": "2",
+      "foto": "1763331974138151796.png"
     }
   ],
   "estantes": [

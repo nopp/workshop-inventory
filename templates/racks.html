@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Racks</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+  <div class="container py-4">
+    <h1 class="mb-4">Racks</h1>
+
+    <form action="/racks/novo" method="post" class="card p-3 mb-4">
+      <h5>New Rack</h5>
+      <div class="input-group">
+        <input name="nome" class="form-control" placeholder="Rack Name" required>
+        <button class="btn btn-primary">Add</button>
+      </div>
+    </form>
+
+    <ul class="list-group">
+      {{range .Racks}}
+      <li class="list-group-item">
+        <div class="d-flex justify-content-between align-items-center">
+          <span>{{.Nome}}</span>
+          <div>
+            <button class="btn btn-sm btn-primary me-2" onclick="showEditForm('{{.Nome}}')">Edit</button>
+            <form action="/racks/deletar?nome={{.Nome}}" method="post" style="display:inline-block">
+              <button class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </div>
+        </div>
+        <div id="edit-form-{{.Nome}}" class="mt-2" style="display:none;">
+          <form action="/racks/editar" method="post" class="d-flex gap-2">
+            <input type="hidden" name="nome_antigo" value="{{.Nome}}">
+            <input type="text" name="nome_novo" class="form-control" value="{{.Nome}}" required>
+            <button type="submit" class="btn btn-success">Save</button>
+            <button type="button" class="btn btn-secondary" onclick="hideEditForm('{{.Nome}}')">Cancel</button>
+          </form>
+        </div>
+      </li>
+      {{end}}
+    </ul>
+
+    <a href="/" class="btn btn-secondary mt-4">Back to Items</a>
+  </div>
+
+  <script>
+    function showEditForm(nome) {
+      document.getElementById(`edit-form-${nome}`).style.display = 'block';
+    }
+    function hideEditForm(nome) {
+      document.getElementById(`edit-form-${nome}`).style.display = 'none';
+    }
+  </script>
+</body>
+</html>

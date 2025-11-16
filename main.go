@@ -51,9 +51,14 @@ type Estante struct {
 	Nome string `json:"nome"`
 }
 
+type Rack struct {
+	Nome string `json:"nome"`
+}
+
 type Inventario struct {
 	Itens    []Item    `json:"itens"`
 	Estantes []Estante `json:"estantes"`
+	Racks    []Rack    `json:"racks"`
 }
 
 type PaginationData struct {
@@ -293,7 +298,7 @@ func main() {
 	}
 
 	// Parse templates with custom functions
-	tmpl := template.Must(template.New("").Funcs(funcMap).ParseFiles("templates/index.html", "templates/estantes.html", "templates/editar_item.html"))
+	tmpl := template.Must(template.New("").Funcs(funcMap).ParseFiles("templates/index.html", "templates/estantes.html", "templates/racks.html", "templates/editar_item.html"))
 
 	// Public routes
 	http.HandleFunc("/login", login)
@@ -311,6 +316,10 @@ func main() {
 	http.HandleFunc("/estantes/novo", requireRole("admin", novaEstante))
 	http.HandleFunc("/estantes/editar", requireRole("admin", editarEstante))
 	http.HandleFunc("/estantes/deletar", requireRole("admin", deletarEstante))
+	http.HandleFunc("/racks", requireRole("admin", listarRacks))
+	http.HandleFunc("/racks/novo", requireRole("admin", novoRack))
+	http.HandleFunc("/racks/editar", requireRole("admin", editarRack))
+	http.HandleFunc("/racks/deletar", requireRole("admin", deletarRack))
 
 	// Add user management routes
 	http.HandleFunc("/usuarios", listarUsuarios)
@@ -397,9 +406,11 @@ func novoItem(w http.ResponseWriter, r *http.Request) {
 			Error    string
 			Item     Item
 			Estantes []Estante
+			Racks    []Rack
 			Config   Config
 		}{
 			Estantes: dados.Estantes,
+			Racks:    dados.Racks,
 			Config:   config,
 		})
 		return
@@ -421,6 +432,7 @@ func novoItem(w http.ResponseWriter, r *http.Request) {
 					Error    string
 					Item     Item
 					Estantes []Estante
+					Racks    []Rack
 					Config   Config
 				}{
 					Error: fmt.Sprintf("An item already exists in this location (Shelf: %s, Rack: %s, Compartment: %s)", estante, prateleira, compartimento),
@@ -432,6 +444,7 @@ func novoItem(w http.ResponseWriter, r *http.Request) {
 						Compartimento: compartimento,
 					},
 					Estantes: dados.Estantes,
+					Racks:    dados.Racks,
 					Config:   config,
 				})
 				return
@@ -815,4 +828,56 @@ func deletarUsuario(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	http.Error(w, "User not found", http.StatusNotFound)
+}
+
+func listarRacks(w http.ResponseWriter, r *http.Request) {
+	tmpl := template.Must(template.ParseFiles("templates/racks.html"))
+	tmpl.Execute(w, dados)
+}
+
+func novoRack(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+		dados.Racks = append(dados.Racks, Rack{Nome: r.FormValue("nome")})
+		salvarDados()
+		http.Redirect(w, r, "/racks", http.StatusSeeOther)
+	}
+}
+
+func deletarRack(w http.ResponseWriter, r *http.Request) {
+	nome := r.URL.Query().Get("nome")
+	for i, rack := range dados.Racks {
+		if rack.Nome == nome {
+			dados.Racks = append(dados.Racks[:i], dados.Racks[i+1:]...)
+			break
+		}
+	}
+	salvarDados()
+	http.Redirect(w, r, "/racks", http.StatusSeeOther)
+}
+
+func editarRack(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		r.ParseForm()
+		nomeAntigo := r.FormValue("nome_antigo")
+		nomeNovo := r.FormValue("nome_novo")
+
+		// Atualiza o nome do rack
+		for i, rack := range dados.Racks {
+			if rack.Nome == nomeAntigo {
+				dados.Racks[i].Nome = nomeNovo
+				break
+			}
+		}
+
+		// Atualiza os itens que usam este rack
+		for i, item := range dados.Itens {
+			if item.Prateleira == nomeAntigo {
+				dados.Itens[i].Prateleira = nomeNovo
+			}
+		}
+
+		salvarDados()
+		http.Redirect(w, r, "/racks", http.StatusSeeOther)
+	}
 }

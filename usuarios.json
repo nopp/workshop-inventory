@@ -10,8 +10,8 @@
     {
       "id": 2,
       "username": "carlos",
-      "password": "456",
-      "role": "viewer",
+      "password": "",
+      "role": "admin",
       "foto": ""
     }
   ]

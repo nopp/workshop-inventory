@@ -29,6 +29,15 @@
                 <textarea class="form-control" id="descricao" name="descricao" rows="3">{{.Item.Descricao}}</textarea>
             </div>
             <div class="mb-3">
+                <label for="prateleira" class="form-label">Rack</label>
+                <select class="form-select" id="prateleira" name="prateleira" required>
+                    <option value="">Select a rack</option>
+                    {{range .Racks}}
+                    <option value="{{.Nome}}" {{if eq .Nome $.Item.Prateleira}}selected{{end}}>{{.Nome}}</option>
+                    {{end}}
+                </select>
+            </div>
+            <div class="mb-3">
                 <label for="estante" class="form-label">Shelf</label>
                 <select class="form-select" id="estante" name="estante" required>
                     <option value="">Select a shelf</option>
@@ -36,10 +45,6 @@
                     <option value="{{.Nome}}" {{if eq .Nome $.Item.Estante}}selected{{end}}>{{.Nome}}</option>
                     {{end}}
                 </select>
-            </div>
-            <div class="mb-3">
-                <label for="prateleira" class="form-label">Rack</label>
-                <input type="text" class="form-control" id="prateleira" name="prateleira" value="{{.Item.Prateleira}}" required>
             </div>
             <div class="mb-3">
                 <label for="compartimento" class="form-label">Compartment</label>

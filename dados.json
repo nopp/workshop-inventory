@@ -5,7 +5,7 @@
       "nome": "M4x10",
       "descricao": "Screw M4x10",
       "estante": "L1",
-      "prateleira": "1",
+      "prateleira": "P-0001",
       "compartimento": "2",
       "foto": "1744118388730391000.jpg"
     },
@@ -14,7 +14,7 @@
       "nome": "teste2",
       "descricao": "asasa",
       "estante": "L3",
-      "prateleira": "1",
+      "prateleira": "P-0001",
       "compartimento": "3",
       "foto": "1744118461538593000.jpeg"
     },
@@ -23,7 +23,7 @@
       "nome": "opa12",
       "descricao": "opa opa",
       "estante": "L2",
-      "prateleira": "3",
+      "prateleira": "P-0003",
       "compartimento": "3",
       "foto": ""
     },
@@ -32,7 +32,7 @@
       "nome": "juca",
       "descricao": "juca123",
       "estante": "L3",
-      "prateleira": "1",
+      "prateleira": "P-0001",
       "compartimento": "1",
       "foto": "1744118477668460000.png"
     }
@@ -46,6 +46,23 @@
     },
     {
       "nome": "L3"
+    }
+  ],
+  "racks": [
+    {
+      "nome": "P-0001"
+    },
+    {
+      "nome": "P-0002"
+    },
+    {
+      "nome": "P-0003"
+    },
+    {
+      "nome": "P-0004"
+    },
+    {
+      "nome": "P-0005"
     }
   ]
 }

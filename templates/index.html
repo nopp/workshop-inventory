@@ -38,6 +38,7 @@
         <span class="me-3">Welcome, {{.Username}} ({{.Role}})</span>
         {{if eq .Role "admin"}}
         <a href="/estantes" class="btn btn-secondary me-2">Manage Shelves</a>
+        <a href="/racks" class="btn btn-secondary me-2">Manage Racks</a>
         <a href="/usuarios" class="btn btn-secondary me-2">Manage Users</a>
         {{end}}
         <a href="/logout" class="btn btn-outline-danger">Logout</a>
@@ -68,8 +69,8 @@
           <th> </th>
           <th>Item</th>
           <th>Description</th>
-          <th>Shelf</th>
           <th>Rack</th>
+          <th>Shelf</th>
           <th>Compartment</th>
           {{if eq .Role "admin"}}
           <th>Actions</th>
@@ -91,8 +92,8 @@
             </td>
             <td>{{.Nome}}</td>
             <td>{{.Descricao}}</td>
-            <td>{{.Estante}}</td>
             <td>{{.Prateleira}}</td>
+            <td>{{.Estante}}</td>
             <td>{{.Compartimento}}</td>
             {{if eq $.Role "admin"}}
             <td>

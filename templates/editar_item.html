@@ -20,13 +20,13 @@
           <label class="form-label">Description</label>
           <input name="descricao" class="form-control" value="{{.Descricao}}" required>
         </div>
-        <div class="col-md-4">
-          <label class="form-label">Shelf</label>
-          <input name="estante" class="form-control" value="{{.Estante}}" required>
-        </div>
         <div class="col-md-3">
           <label class="form-label">Rack</label>
-          <input name="prateleira" class="form-control" value="{{.Prateleira}}" required>
+          <input name="prateleira" class="form-control" value="{{.Prateleira}}" placeholder="e.g., 1, 2, 3..." required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Shelf</label>
+          <input name="estante" class="form-control" value="{{.Estante}}" placeholder="e.g., L1, L2, L3..." required>
         </div>
         <div class="col-md-3">
           <label class="form-label">Compartment</label>
